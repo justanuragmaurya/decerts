@@ -1,0 +1,31 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Certificate {
+  id            String   @id @default(cuid())
+  name          String // Recipient's name
+  email         String // Recipient's email
+  certTitle     String // Certificate title
+  description   String? // Certificate description
+  issueDate     DateTime // Date when certificate was issued
+  walletAddress String // Recipient's wallet address for NFT
+  createdBy     String // Wallet address of the issuer
+  mintAddress   String? // NFT mint address (after minting)
+  txSignature   String? // Transaction signature
+  imageUrl      String? // URL to the certificate image
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
