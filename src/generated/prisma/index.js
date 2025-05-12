@@ -139,7 +139,7 @@ const config = {
       "value": "prisma-client-js"
     },
     "output": {
-      "value": "/Users/anuragmaurya/Documents/Coding/projects/decerts/src/generated/prisma",
+      "value": "/Users/anuragmaurya/Documents/Coding/projects/certi/decerts/src/generated/prisma",
       "fromEnvVar": null
     },
     "config": {
@@ -153,7 +153,7 @@ const config = {
       }
     ],
     "previewFeatures": [],
-    "sourceFilePath": "/Users/anuragmaurya/Documents/Coding/projects/decerts/prisma/schema.prisma",
+    "sourceFilePath": "/Users/anuragmaurya/Documents/Coding/projects/certi/decerts/prisma/schema.prisma",
     "isCustomOutput": true
   },
   "relativeEnvPaths": {
@@ -167,12 +167,11 @@ const config = {
     "db"
   ],
   "activeProvider": "postgresql",
-  "postinstall": false,
   "inlineDatasources": {
     "db": {
       "url": {
         "fromEnvVar": "DATABASE_URL",
-        "value": null
+        "value": "postgresql://postgres:1234@localhost:5432/decerts"
       }
     }
   },

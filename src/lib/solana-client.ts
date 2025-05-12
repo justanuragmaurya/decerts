@@ -1,7 +1,15 @@
 import { Connection, PublicKey, Transaction, SystemProgram, Keypair, LAMPORTS_PER_SOL, sendAndConfirmTransaction } from '@solana/web3.js';
 
 // Initialize connection to Solana network (devnet for testing)
-const connection = new Connection(process.env.NEXT_PUBLIC_SOLANA_RPC_URL || 'https://api.devnet.solana.com', 'confirmed');
+// Use 'processed' commitment level and disable WebSocket subscriptions
+const connection = new Connection(
+  process.env.NEXT_PUBLIC_SOLANA_RPC_URL || 'https://api.devnet.solana.com', 
+  {
+    commitment: 'confirmed',
+    disableRetryOnRateLimit: true,
+    confirmTransactionInitialTimeout: 60000 // Longer timeout for confirmations
+  }
+);
 
 /**
  * Create and mint an NFT certificate
@@ -72,8 +80,13 @@ export async function mintCertificateNFT(wallet: any, recipientWallet: string, m
     const signature = await connection.sendRawTransaction(signedTransaction.serialize());
     console.log('Transaction sent with signature:', signature);
     
-    // Wait for confirmation
-    const confirmation = await connection.confirmTransaction(signature, 'confirmed');
+    // Wait for confirmation using polling instead of WebSocket subscriptions
+    // This uses getSignatureStatus polling instead of signatureSubscribe
+    const confirmation = await connection.confirmTransaction({
+      signature,
+      blockhash: transaction.recentBlockhash,
+      lastValidBlockHeight: (await connection.getLatestBlockhash()).lastValidBlockHeight
+    });
     console.log('Transaction confirmed:', confirmation);
     
     // Return the mint address and transaction signature
@@ -94,8 +107,10 @@ export async function mintCertificateNFT(wallet: any, recipientWallet: string, m
  */
 export async function verifyTransaction(txSignature: string) {
   try {
+    // Use maxSupportedTransactionVersion to ensure compatibility with newer transactions
     const transaction = await connection.getTransaction(txSignature, {
       commitment: 'confirmed',
+      maxSupportedTransactionVersion: 0
     });
     
     return transaction;

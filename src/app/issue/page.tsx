@@ -1,16 +1,19 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { useWallet, useConnection } from '@solana/wallet-adapter-react';
-import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
-import { Transaction } from '@solana/web3.js';
+import React, { useState } from 'react';
 import CertificatePreview from '@/components/certificate-preview';
-import { mintCertificateNFT } from '@/lib/solana-client';
+import { useWallet } from "@solana/wallet-adapter-react";
+import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
+import { Metaplex, walletAdapterIdentity } from "@metaplex-foundation/js";
+import { PublicKey, Connection, clusterApiUrl } from "@solana/web3.js";
+import { SOLANA_RPC_URL, SOLANA_EXPLORER_URL, SOLANA_NETWORK, CONNECTION_CONFIG } from "@/lib/solana-config";
+import { waitForTransaction, getTransactionDetails } from "@/lib/solana-utils";
 
 function IssuePage() {
-  const { connected, publicKey, signTransaction } = useWallet();
-  const [isClient, setIsClient] = useState(false);
   const [activeTab, setActiveTab] = useState('manual');
+  // Create a connection using the Alchemy RPC URL with WebSockets disabled
+  const connection = new Connection(SOLANA_RPC_URL, CONNECTION_CONFIG);
+  const wallet = useWallet();
   
   // Form state
   const [formData, setFormData] = useState({
@@ -19,7 +22,7 @@ function IssuePage() {
     certTitle: '',
     description: '',
     issueDate: '',
-    walletAddress: ''
+    recipientWallet: ''
   });
   
   // Handle form input changes
@@ -33,30 +36,129 @@ function IssuePage() {
   
   // State for tracking submission status
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isMinting, setIsMinting] = useState(false);
   const [submitStatus, setSubmitStatus] = useState<{
     success?: boolean;
     message?: string;
     certificateId?: string;
-    mintAddress?: string;
-    txSignature?: string;
+    nftMint?: string;
+    txId?: string;
   }>({});
 
-  // Get connection from wallet adapter
-  const { connection } = useConnection();
+  // Mint NFT certificate
+  const mintNFTCertificate = async (certificateId: string) => {
+    if (!wallet.publicKey || !wallet.connected) {
+      return { success: false, message: "Please connect your wallet first" };
+    }
+    
+    // Validate recipient wallet address if provided
+    let recipientAddress = wallet.publicKey;
+    if (formData.recipientWallet) {
+      try {
+        recipientAddress = new PublicKey(formData.recipientWallet);
+      } catch (error) {
+        return { success: false, message: "Invalid recipient wallet address" };
+      }
+    }
+    
+    try {
+      // Initialize Metaplex with wallet adapter identity
+      const metaplex = Metaplex.make(connection)
+        .use(walletAdapterIdentity(wallet));
+      
+      // Create the NFT with metadata and mint to recipient address
+      // This returns the transaction signature along with the NFT
+      const { nft, response } = await metaplex
+        .nfts()
+        .create({
+          uri: 'https://via.placeholder.com/500?text=Certificate',
+          name: `Certificate: ${formData.name}`,
+          sellerFeeBasisPoints: 0, // No royalties
+          symbol: "CERT",
+          creators: [
+            {
+              address: wallet.publicKey,
+              share: 100,
+            },
+          ],
+          isMutable: true,
+          tokenOwner: recipientAddress, // Mint directly to recipient
+        });
+
+      // Get the NFT mint address
+      const nftMint = nft.address.toString();
+      
+      // Get the transaction signature
+      const txId = response.signature;
+      
+      // Wait for transaction confirmation using our reliable approach
+      console.log('Waiting for transaction confirmation...');
+      await waitForTransaction(connection, txId);
+      
+      // Get transaction details to verify success
+      const txDetails = await getTransactionDetails(connection, txId);
+      
+      // Log success information
+      console.log('NFT minted successfully:', {
+        mint: nftMint,
+        owner: recipientAddress.toString(),
+        txId: txId,
+        txDetails: txDetails ? 'Transaction confirmed' : 'Transaction details not available'
+      });
+      
+      // Save the NFT mint to your database with better error handling
+      try {
+        const response = await fetch('/api/update-certificate', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            certificateId,
+            mintAddress: nftMint,
+            txSignature: txId, // Using the transaction ID as the signature
+          }),
+        });
+        
+        const result = await response.json();
+        if (!response.ok) {
+          console.error("Failed to update certificate in database", result);
+          // Still return success for the NFT minting part
+          return { 
+            success: true, 
+            nftMint, 
+            txId,
+            message: "NFT minted successfully, but failed to update database record" 
+          };
+        }
+      } catch (dbError) {
+        console.error("Failed to update certificate in database", dbError);
+        // Continue even if DB update fails, return success for the NFT part
+        return { 
+          success: true, 
+          nftMint, 
+          txId,
+          message: "NFT minted successfully, but failed to update database record" 
+        };
+      }
+      
+      return { success: true, nftMint, txId };
+    } catch (error) {
+      console.error("Error minting NFT:", error);
+      return { success: false, message: error instanceof Error ? error.message : "Failed to mint NFT certificate" };
+    }
+  };
 
   // Handle form submission
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsSubmitting(true);
     setSubmitStatus({});
+    
     try {
-      // First save the certificate to the database
-      // Format the date for the API and add the connected wallet address
+      // Format the data for submission
       const formattedData = {
         ...formData,
-        issueDate: formData.issueDate ? new Date(formData.issueDate).toISOString() : null,
-        createdBy: publicKey ? publicKey.toBase58() : ''
+        issueDate: formData.issueDate ? new Date(formData.issueDate).toISOString() : null
       };
       
       console.log('Submitting certificate data:', formattedData);
@@ -74,17 +176,47 @@ function IssuePage() {
       
       if (response.ok) {
         // Certificate saved to database successfully
-        setSubmitStatus({
-          success: true,
-          message: 'Certificate saved to database. Ready to mint NFT.',
-          certificateId: result.data.id
-        });
         console.log('Certificate saved:', result.data);
+        
+        // If wallet is connected, mint NFT
+        if (wallet.connected && wallet.publicKey) {
+          setSubmitStatus({
+            success: true,
+            message: 'Certificate generated. Minting NFT...',
+            certificateId: result.data.id
+          });
+          
+          // Mint NFT
+          const nftResult = await mintNFTCertificate(result.data.id);
+          
+          if (nftResult.success) {
+            setSubmitStatus({
+              success: true,
+              message: 'Certificate generated and NFT minted successfully!',
+              certificateId: result.data.id,
+              nftMint: nftResult.nftMint,
+              txId: nftResult.txId
+            });
+          } else {
+            setSubmitStatus({
+              success: true,
+              message: `Certificate generated but NFT minting failed: ${nftResult.message}`,
+              certificateId: result.data.id
+            });
+          }
+        } else {
+          // No wallet connected, just show certificate success
+          setSubmitStatus({
+            success: true,
+            message: 'Certificate generated successfully! Connect wallet to mint as NFT.',
+            certificateId: result.data.id
+          });
+        }
       } else {
-        throw new Error(result.message || 'Failed to issue certificate');
+        throw new Error(result.message || 'Failed to save certificate');
       }
     } catch (error) {
-      console.error('Error submitting certificate data:', error);
+      console.error('Error generating certificate:', error);
       setSubmitStatus({
         success: false,
         message: error instanceof Error ? error.message : 'An unknown error occurred'
@@ -93,207 +225,119 @@ function IssuePage() {
       setIsSubmitting(false);
     }
   };
-  
-  // Handle minting the NFT on the frontend
-  const handleMintNFT = async () => {
-    if (!publicKey || !signTransaction) {
-      setSubmitStatus({
-        success: false,
-        message: 'Unable to mint NFT. Wallet not connected.'
-      });
-      return;
-    }
-    
-    setIsMinting(true);
-    try {
-      // Create metadata for the NFT
-      const nftMetadata = {
-        name: formData.certTitle,
-        description: formData.description || `Certificate for ${formData.name}`,
-        recipient: formData.name,
-        issueDate: formData.issueDate,
-        // In a production environment, we would include an image URL here
-      };
-      
-      // Mint the NFT using the connected wallet (issuer)
-      const { mintAddress, txSignature } = await mintCertificateNFT(
-        { publicKey, signTransaction },
-        formData.walletAddress,
-        nftMetadata
-      );
-      
-      console.log('NFT minted successfully:', { mintAddress, txSignature });
-      
-      // Update the certificate in the database with blockchain details
-      const updateResponse = await fetch('/api/update-certificate', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          certificateId: submitStatus.certificateId,
-          mintAddress,
-          txSignature
-        }),
-      });
-      
-      const updateResult = await updateResponse.json();
-      
-      if (updateResponse.ok) {
-        setSubmitStatus({
-          success: true,
-          message: 'NFT minted successfully! Certificate is now on the blockchain.',
-          certificateId: submitStatus.certificateId,
-          mintAddress,
-          txSignature
-        });
-        console.log('Certificate updated with blockchain details:', updateResult);
-      } else {
-        throw new Error(updateResult.message || 'Failed to update certificate with blockchain details');
-      }
-    } catch (error) {
-      console.error('Error minting NFT:', error);
-      setSubmitStatus({
-        success: false,
-        message: error instanceof Error ? error.message : 'Failed to mint NFT',
-        certificateId: submitStatus.certificateId
-      });
-    } finally {
-      setIsMinting(false);
-    }
-  };
-
-
-  useEffect(() => {
-    setIsClient(true);
-  }, []);
-
-  if (!isClient) {
-    return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
-  }
-
-  if (!connected) {
-    return (
-      <div className="min-h-screen flex flex-col items-center justify-center gap-4 p-4">
-        <h1 className="text-2xl font-bold text-center">Connect Your Wallet</h1>
-        <p className="text-center max-w-md mb-4">Please connect your wallet to access the certificate issuance page.</p>
-        <WalletMultiButton />
-      </div>
-    );
-  }
 
   return (
-    <div className="min-h-screen p-4">
-      <h1 className="text-2xl font-bold mb-6">Issue Certificate</h1>
+    <div className="container mx-auto py-8 px-4">
+      <h1 className="text-3xl font-bold mb-8">Issue New Certificate</h1>
       
-      {/* Tab buttons */}
-      <div className="flex gap-4 mb-6">
-        <button 
-          onClick={() => setActiveTab('manual')} 
-          className={`px-4 py-2 rounded-lg font-medium transition-colors ${activeTab === 'manual' ? 'bg-primary text-primary-foreground' : 'bg-secondary hover:bg-secondary/80'}`}
+      {/* Tabs */}
+      <div className="flex border-b mb-6">
+        <button
+          className={`px-4 py-2 ${activeTab === 'manual' ? 'border-b-2 border-amber-500 text-amber-600' : 'text-gray-500'}`}
+          onClick={() => setActiveTab('manual')}
         >
-          Enter Participant Details
+          Manual Entry
         </button>
-        <button 
-          onClick={() => setActiveTab('csv')} 
-          className={`px-4 py-2 rounded-lg font-medium transition-colors ${activeTab === 'csv' ? 'bg-primary text-primary-foreground' : 'bg-secondary hover:bg-secondary/80'}`}
-          disabled
+        <button
+          className={`px-4 py-2 ${activeTab === 'csv' ? 'border-b-2 border-amber-500 text-amber-600' : 'text-gray-500'}`}
+          onClick={() => setActiveTab('csv')}
         >
-          Upload CSV <span className="text-xs ml-1 opacity-70">(Coming Soon)</span>
+          CSV Upload
         </button>
       </div>
       
       {/* Content based on active tab */}
       {activeTab === 'manual' ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid md:grid-cols-2 gap-8">
           {/* Form Section */}
           <div className="p-6 border rounded-lg shadow-sm">
-            <h2 className="text-xl font-semibold mb-4">Participant Details</h2>
-            <form className="space-y-4" onSubmit={handleSubmit}>
+            <h2 className="text-xl font-semibold mb-4">Certificate Details</h2>
+            
+            <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label htmlFor="name" className="block text-sm font-medium mb-1">Full Name</label>
+                <label htmlFor="name" className="block text-sm font-medium mb-1">Recipient Name</label>
                 <input 
                   type="text" 
                   id="name" 
                   className="w-full p-2 border rounded-md" 
-                  placeholder="Enter participant's full name"
+                  placeholder="Enter recipient's full name"
                   value={formData.name}
                   onChange={handleInputChange}
                   required
                 />
               </div>
+              
               <div>
-                <label htmlFor="email" className="block text-sm font-medium mb-1">Email Address</label>
+                <label htmlFor="email" className="block text-sm font-medium mb-1">Recipient Email</label>
                 <input 
                   type="email" 
                   id="email" 
                   className="w-full p-2 border rounded-md" 
-                  placeholder="Enter participant's email"
+                  placeholder="Enter recipient's email address"
                   value={formData.email}
                   onChange={handleInputChange}
                   required
                 />
               </div>
+              
               <div>
                 <label htmlFor="certTitle" className="block text-sm font-medium mb-1">Certificate Title</label>
                 <input 
                   type="text" 
                   id="certTitle" 
                   className="w-full p-2 border rounded-md" 
-                  placeholder="e.g., Completion Certificate, Achievement Award"
+                  placeholder="e.g., Certificate of Completion"
                   value={formData.certTitle}
                   onChange={handleInputChange}
                   required
                 />
               </div>
+              
               <div>
                 <label htmlFor="description" className="block text-sm font-medium mb-1">Description</label>
                 <textarea 
                   id="description" 
-                  rows={3} 
                   className="w-full p-2 border rounded-md" 
-                  placeholder="Brief description of the achievement or certificate purpose"
+                  placeholder="Enter certificate description or achievement details"
                   value={formData.description}
                   onChange={handleInputChange}
+                  rows={3}
                 ></textarea>
               </div>
+              
               <div>
                 <label htmlFor="issueDate" className="block text-sm font-medium mb-1">Issue Date</label>
                 <input 
                   type="date" 
                   id="issueDate" 
-                  className="w-full p-2 border rounded-md"
+                  className="w-full p-2 border rounded-md" 
                   value={formData.issueDate}
                   onChange={handleInputChange}
                   required
                 />
               </div>
+              
               <div>
-                <label htmlFor="walletAddress" className="block text-sm font-medium mb-1">Recipient Wallet Address</label>
-                <div className="flex gap-2">
-                  <input 
-                    type="text" 
-                    id="walletAddress" 
-                    className="w-full p-2 border rounded-md" 
-                    placeholder="Enter participant's Solana wallet address"
-                    value={formData.walletAddress}
-                    onChange={handleInputChange}
-                    required
-                  />
-                  <button 
-                    type="button" 
-                    className="px-3 py-2 bg-secondary rounded-md text-xs"
-                    onClick={() => setFormData({...formData, walletAddress: publicKey ? publicKey.toBase58() : ''})}
-                    title="Use your connected wallet address"
-                  >
-                    Use Mine
-                  </button>
-                </div>
-                <p className="text-xs mt-1 opacity-70">NFT will be minted to this wallet address</p>
+                <label htmlFor="recipientWallet" className="block text-sm font-medium mb-1">
+                  Recipient Wallet Address
+                  <span className="ml-1 text-xs text-gray-500">(optional)</span>
+                </label>
+                <input 
+                  type="text" 
+                  id="recipientWallet" 
+                  className="w-full p-2 border rounded-md" 
+                  placeholder="Solana wallet address to receive the NFT"
+                  value={formData.recipientWallet}
+                  onChange={handleInputChange}
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  If left empty, the NFT will be minted to your connected wallet
+                </p>
               </div>
+              
               <button 
                 type="submit" 
-                className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors flex items-center justify-center"
+                className="px-4 py-2 bg-amber-600 text-white rounded-md hover:bg-amber-700 transition-colors flex items-center justify-center"
                 disabled={isSubmitting}
               >
                 {isSubmitting ? (
@@ -302,7 +346,7 @@ function IssuePage() {
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                     </svg>
-                    Processing...
+                    Generating...
                   </>
                 ) : 'Generate Certificate'}
               </button>
@@ -311,35 +355,40 @@ function IssuePage() {
               {submitStatus.message && (
                 <div className={`mt-4 p-3 rounded-md ${submitStatus.success ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' : 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'}`}>
                   <p>{submitStatus.message}</p>
-                  
-                  {/* Show mint NFT button if certificate is saved but not yet minted */}
-                  {submitStatus.success && submitStatus.certificateId && !submitStatus.txSignature && (
-                    <button
-                      type="button"
-                      onClick={handleMintNFT}
-                      className="mt-3 px-4 py-2 bg-amber-600 text-white rounded-md hover:bg-amber-700 transition-colors flex items-center justify-center w-full"
-                      disabled={isMinting}
-                    >
-                      {isMinting ? (
-                        <>
-                          <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                          </svg>
-                          Minting NFT...
-                        </>
-                      ) : 'Mint NFT Certificate'}
-                    </button>
-                  )}
-                  
-                  {/* Show transaction details if NFT was minted */}
-                  {submitStatus.txSignature && submitStatus.mintAddress && (
+                  {submitStatus.certificateId && (
                     <div className="mt-3 text-xs">
-                      <p className="font-semibold">NFT Details:</p>
-                      <p className="truncate">Mint Address: {submitStatus.mintAddress}</p>
-                      <p className="truncate">Transaction: {submitStatus.txSignature}</p>
+                      <p className="font-semibold">Certificate Details:</p>
+                      <p className="truncate">Certificate ID: {submitStatus.certificateId}</p>
                     </div>
                   )}
+                </div>
+              )}
+              
+              {/* Wallet Connection Section */}
+              <div className="mt-4">
+                <label className="block text-sm font-medium mb-2">Connect Wallet to Mint NFT Certificate</label>
+                <div className="flex items-center gap-2">
+                  <WalletMultiButton className="!bg-amber-600 hover:!bg-amber-700" />
+                  <span className="text-xs opacity-70">{wallet.connected ? "Wallet Connected" : "Connect wallet to mint NFT"}</span>
+                </div>
+              </div>
+              
+              {/* NFT Details (only shown after NFT is minted) */}
+              {submitStatus.success && submitStatus.nftMint && (
+                <div className="mt-4 p-3 rounded-md bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">
+                  <p className="font-semibold mb-1">NFT Minted Successfully!</p>
+                  <div className="text-xs space-y-1">
+                    <p className="truncate">NFT Mint: {submitStatus.nftMint}</p>
+                    {submitStatus.txId && <p className="truncate">Transaction ID: {submitStatus.txId}</p>}
+                    <a 
+                      href={`${SOLANA_EXPLORER_URL}/address/${submitStatus.nftMint}?cluster=${SOLANA_NETWORK}`} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="text-amber-600 hover:underline block mt-2"
+                    >
+                      View on Solana Explorer
+                    </a>
+                  </div>
                 </div>
               )}
             </form>

@@ -1,26 +1,20 @@
-import { Connection, PublicKey, Transaction, Keypair, SystemProgram, TransactionInstruction, sendAndConfirmTransaction } from '@solana/web3.js';
+import { Connection, PublicKey, Transaction, SystemProgram, TransactionInstruction } from '@solana/web3.js';
 // We'll use a simplified approach for now, but in production you would use the full SPL token and Metaplex libraries
 
 // Initialize connection to Solana network (devnet for testing)
 const connection = new Connection(process.env.SOLANA_RPC_URL || 'https://api.devnet.solana.com', 'confirmed');
 
 /**
- * Get the issuer keypair from environment variable
- * In production, this would be securely stored and accessed
+ * Get the issuer public key from wallet address
+ * @param issuerWallet The issuer's wallet address as a string
+ * @returns PublicKey object
  */
-function getIssuerKeypair(): Keypair {
-  if (!process.env.ISSUER_PRIVATE_KEY) {
-    throw new Error('ISSUER_PRIVATE_KEY environment variable is not set');
-  }
-  
+function getIssuerPublicKey(issuerWallet: string): PublicKey {
   try {
-    // The private key should be stored as a base64 encoded string
-    const privateKeyBase64 = process.env.ISSUER_PRIVATE_KEY;
-    const secretKey = Uint8Array.from(Buffer.from(privateKeyBase64, 'base64'));
-    return Keypair.fromSecretKey(secretKey);
+    return new PublicKey(issuerWallet);
   } catch (error) {
-    console.error('Error loading issuer keypair:', error);
-    throw new Error('Invalid ISSUER_PRIVATE_KEY format');
+    console.error('Error creating public key from wallet address:', error);
+    throw new Error('Invalid wallet address format');
   }
 }
 
@@ -38,9 +32,8 @@ export async function createPartiallySignedMintTransaction(
   metadata: any
 ) {
   try {
-    // Get the issuer keypair (this would be securely stored on the server)
-    const issuerKeypair = getIssuerKeypair();
-    const issuerPublicKey = issuerKeypair.publicKey;
+    // Get the issuer public key from wallet address
+    const issuerPublicKey = getIssuerPublicKey(issuerWallet);
     
     // Convert recipient wallet string to PublicKey
     const recipientPublicKey = new PublicKey(recipientWallet);
@@ -98,12 +91,12 @@ export async function createPartiallySignedMintTransaction(
     const { blockhash } = await connection.getLatestBlockhash();
     transaction.recentBlockhash = blockhash;
     
-    // Partially sign the transaction with the issuer's keypair
-    transaction.partialSign(issuerKeypair);
+    // We don't sign the transaction on the server anymore
+    // Instead, we create an unsigned transaction that will be signed by the wallet in the frontend
     
     // Serialize the transaction to send to the frontend
     const serializedTransaction = transaction.serialize({
-      requireAllSignatures: false // Allow partial signatures
+      requireAllSignatures: false // Allow no signatures for now
     }).toString('base64');
     
     // Return the serialized transaction and a simulated mint address
