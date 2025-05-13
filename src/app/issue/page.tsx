@@ -133,7 +133,9 @@ function IssuePage() {
       // Format the data for submission
       const formattedData = {
         ...formData,
-        issueDate: formData.issueDate ? new Date(formData.issueDate).toISOString() : null
+        issueDate: formData.issueDate ? new Date(formData.issueDate).toISOString() : null,
+        // Include the connected wallet address as the creator
+        walletAddress: wallet.connected && wallet.publicKey ? wallet.publicKey.toString() : null
       };
       
       console.log('Submitting certificate data:', formattedData);

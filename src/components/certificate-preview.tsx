@@ -7,13 +7,17 @@ interface CertificatePreviewProps {
   certTitle: string;
   description: string;
   issueDate: string;
+  mintAddress?: string | null;
+  certificateId?: string;
 }
 
 const CertificatePreview: React.FC<CertificatePreviewProps> = ({
   name,
   certTitle,
   description,
-  issueDate
+  issueDate,
+  mintAddress,
+  certificateId
 }) => {
   // Format the date for display
   const formattedDate = issueDate ? new Date(issueDate).toLocaleDateString('en-US', {
@@ -24,46 +28,102 @@ const CertificatePreview: React.FC<CertificatePreviewProps> = ({
 
   return (
     <div className="h-full flex items-center justify-center p-4">
-      <div className="w-full max-w-2xl aspect-[4/3] bg-gradient-to-br from-gray-900 to-gray-800 border-8 border-gray-700 rounded-lg shadow-2xl p-8 flex flex-col items-center justify-between text-center relative overflow-hidden">
-        {/* Certificate Border */}
-        <div className="absolute inset-0 border-[12px] border-double border-amber-500/30 m-4 pointer-events-none"></div>
+      <div className="w-full max-w-2xl aspect-[4/3] bg-white rounded-lg shadow-2xl p-8 flex flex-col items-center justify-between text-center relative overflow-hidden">
+        {/* Geometric Patterns - Left Side */}
+        <div className="absolute left-0 top-0 bottom-0 w-24 overflow-hidden">
+          {[...Array(15)].map((_, i) => (
+            <div key={`left-line-${i}`} className="absolute" style={{
+              left: `${Math.random() * 100}%`,
+              top: `${Math.random() * 100}%`,
+              width: `${Math.random() * 150 + 50}px`,
+              height: '1px',
+              background: 'rgba(20, 184, 166, 0.5)',
+              transform: `rotate(${Math.random() * 180}deg)`
+            }}></div>
+          ))}
+          {[...Array(5)].map((_, i) => (
+            <div key={`left-dot-${i}`} className="absolute rounded-full" style={{
+              left: `${Math.random() * 100}%`,
+              top: `${Math.random() * 100}%`,
+              width: `${Math.random() * 6 + 2}px`,
+              height: `${Math.random() * 6 + 2}px`,
+              background: 'rgba(20, 184, 166, 0.8)'
+            }}></div>
+          ))}
+        </div>
+        
+        {/* Geometric Patterns - Right Side */}
+        <div className="absolute right-0 top-0 bottom-0 w-24 overflow-hidden">
+          {[...Array(15)].map((_, i) => (
+            <div key={`right-line-${i}`} className="absolute" style={{
+              right: `${Math.random() * 100}%`,
+              top: `${Math.random() * 100}%`,
+              width: `${Math.random() * 150 + 50}px`,
+              height: '1px',
+              background: 'rgba(20, 184, 166, 0.5)',
+              transform: `rotate(${Math.random() * 180}deg)`
+            }}></div>
+          ))}
+          {[...Array(5)].map((_, i) => (
+            <div key={`right-dot-${i}`} className="absolute rounded-full" style={{
+              right: `${Math.random() * 100}%`,
+              top: `${Math.random() * 100}%`,
+              width: `${Math.random() * 6 + 2}px`,
+              height: `${Math.random() * 6 + 2}px`,
+              background: 'rgba(20, 184, 166, 0.8)'
+            }}></div>
+          ))}
+        </div>
         
         {/* Certificate Header */}
         <div className="mt-6 z-10 w-full">
-          <h3 className="text-2xl font-serif text-amber-400 tracking-wider">CERTIFICATE OF ACHIEVEMENT</h3>
-          <div className="w-48 h-1 bg-amber-500 mx-auto my-3"></div>
+          <h3 className="text-3xl font-bold tracking-wider text-gray-900">CERTIFICATE</h3>
+          <p className="text-lg uppercase tracking-widest text-gray-600">OF APPRECIATION</p>
+          <div className="w-48 h-0.5 bg-teal-500 mx-auto my-3"></div>
         </div>
         
         {/* Certificate Content */}
         <div className="flex-1 flex flex-col items-center justify-center z-10 px-6 py-4 w-full">
-          <p className="text-base text-gray-300 mb-3">This certifies that</p>
-          <h2 className="text-3xl font-bold font-serif mb-3 text-white">{name || 'Recipient Name'}</h2>
-          <p className="text-base text-gray-300 mb-4">has successfully completed</p>
-          <h3 className="text-2xl font-semibold mb-3 text-amber-400">{certTitle || 'Certificate Title'}</h3>
-          <p className="text-sm italic max-w-md text-gray-300">{description || 'Certificate description will appear here.'}</p>
-        </div>
-        
-        {/* Certificate Footer */}
-        <div className="mt-auto mb-6 z-10 w-full">
-          <p className="text-base text-gray-300 mb-2">{formattedDate || 'Issue Date'}</p>
-          <div className="w-48 h-px bg-amber-500/70 mx-auto my-3"></div>
-          <div className="flex items-center justify-center gap-2">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-amber-400">
-              <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="currentColor" />
-            </svg>
-            <p className="text-lg font-semibold tracking-widest text-amber-400">DECERTS</p>
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-amber-400">
-              <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="currentColor" />
-            </svg>
+          <div className="w-full bg-teal-500 py-2 mb-6">
+            <p className="text-white font-medium tracking-wider">PROUDLY PRESENTED TO</p>
+          </div>
+          
+          <h2 className="text-4xl font-bold text-teal-600 mb-4 font-serif">{name || 'Recipient Name'}</h2>
+          
+          <p className="text-sm uppercase text-gray-600 mb-2 tracking-wider">{certTitle || 'Certificate Title'}</p>
+          
+          <p className="text-sm max-w-md text-gray-500 mb-6">{description || 'Certificate description will appear here.'}</p>
+          
+          <div className="flex justify-between w-full max-w-md mt-8">
+            <div className="text-center">
+              <div className="w-32 border-b border-gray-400 mb-1"></div>
+              <p className="text-sm text-gray-600">DATE</p>
+              <p className="text-sm text-gray-800">{formattedDate || 'Issue Date'}</p>
+            </div>
+            
+            <div className="text-center">
+              <div className="w-32 border-b border-gray-400 mb-1"></div>
+              <p className="text-sm text-gray-600">SIGNATURE</p>
+              <p className="text-sm text-teal-600 font-medium">DECERTS</p>
+            </div>
           </div>
         </div>
         
-        {/* Decorative Elements */}
-        <div className="absolute top-0 left-0 w-40 h-40 border-t-4 border-l-4 border-amber-500/30 rounded-tl-lg"></div>
-        <div className="absolute bottom-0 right-0 w-40 h-40 border-b-4 border-r-4 border-amber-500/30 rounded-br-lg"></div>
-        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-amber-500 opacity-5 rounded-full"></div>
-        <div className="absolute top-0 right-0 w-24 h-24 bg-amber-500/10 rounded-full -mr-12 -mt-12"></div>
-        <div className="absolute bottom-0 left-0 w-24 h-24 bg-amber-500/10 rounded-full -ml-12 -mb-12"></div>
+        {/* Certificate ID - Bottom Left Corner */}
+        {certificateId && (
+          <div className="absolute bottom-4 left-4 text-left z-20 max-w-[30%]">
+            <p className="text-xs text-teal-600 font-medium">Certificate ID</p>
+            <p className="text-[8px] font-mono text-gray-600 break-all">{certificateId}</p>
+          </div>
+        )}
+        
+        {/* NFT Address - Bottom Right Corner */}
+        {mintAddress && (
+          <div className="absolute bottom-4 right-4 text-right z-20 max-w-[30%]">
+            <p className="text-xs text-teal-600 font-medium">NFT Address</p>
+            <p className="text-[8px] font-mono text-gray-600 break-all">{mintAddress}</p>
+          </div>
+        )}
       </div>
     </div>
   );

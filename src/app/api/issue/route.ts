@@ -21,16 +21,17 @@ export async function POST(request: NextRequest) {
     }
     
     // Create a certificate object that matches our Prisma schema
-    // Adding default values for blockchain fields that are still required by the schema
+    // Use the wallet address from the request if available
     const certificate = {
       name: data.name,
       email: data.email,
       certTitle: data.certTitle,
       description: data.description || null,
       issueDate: new Date(data.issueDate),
-      // Default values for required blockchain fields
-      walletAddress: 'N/A', // Default value since we no longer collect this
-      createdBy: 'system',  // Default value since we no longer track the creator
+      // Use recipient wallet address if provided, otherwise use the connected wallet address
+      walletAddress: data.recipientWallet || data.walletAddress || 'N/A',
+      // Use the connected wallet address as the creator
+      createdBy: data.walletAddress || 'system',
       // Optional blockchain fields
       mintAddress: null,
       txSignature: null,
