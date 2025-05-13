@@ -127,10 +127,6 @@ exports.Prisma.CertificateScalarFieldEnum = {
   certTitle: 'certTitle',
   description: 'description',
   issueDate: 'issueDate',
-  walletAddress: 'walletAddress',
-  createdBy: 'createdBy',
-  mintAddress: 'mintAddress',
-  txSignature: 'txSignature',
   imageUrl: 'imageUrl',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
