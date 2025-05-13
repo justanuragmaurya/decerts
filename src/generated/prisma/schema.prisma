@@ -15,13 +15,17 @@ datasource db {
 }
 
 model Certificate {
-  id          String   @id @default(cuid())
-  name        String // Recipient's name
-  email       String // Recipient's email
-  certTitle   String // Certificate title
-  description String? // Certificate description
-  issueDate   DateTime // Date when certificate was issued
-  imageUrl    String? // URL to the certificate image
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id            String   @id @default(cuid())
+  name          String // Recipient's name
+  email         String // Recipient's email
+  certTitle     String // Certificate title
+  description   String? // Certificate description
+  issueDate     DateTime // Date when certificate was issued
+  imageUrl      String? // URL to the certificate image
+  walletAddress String? // Recipient's wallet address
+  createdBy     String? // Who created this certificate
+  mintAddress   String? // NFT mint address if minted
+  txSignature   String? // Transaction signature if minted
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 }

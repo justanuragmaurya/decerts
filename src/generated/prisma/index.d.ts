@@ -887,6 +887,10 @@ export namespace Prisma {
     description: string | null
     issueDate: Date | null
     imageUrl: string | null
+    walletAddress: string | null
+    createdBy: string | null
+    mintAddress: string | null
+    txSignature: string | null
     createdAt: Date | null
     updatedAt: Date | null
   }
@@ -899,6 +903,10 @@ export namespace Prisma {
     description: string | null
     issueDate: Date | null
     imageUrl: string | null
+    walletAddress: string | null
+    createdBy: string | null
+    mintAddress: string | null
+    txSignature: string | null
     createdAt: Date | null
     updatedAt: Date | null
   }
@@ -911,6 +919,10 @@ export namespace Prisma {
     description: number
     issueDate: number
     imageUrl: number
+    walletAddress: number
+    createdBy: number
+    mintAddress: number
+    txSignature: number
     createdAt: number
     updatedAt: number
     _all: number
@@ -925,6 +937,10 @@ export namespace Prisma {
     description?: true
     issueDate?: true
     imageUrl?: true
+    walletAddress?: true
+    createdBy?: true
+    mintAddress?: true
+    txSignature?: true
     createdAt?: true
     updatedAt?: true
   }
@@ -937,6 +953,10 @@ export namespace Prisma {
     description?: true
     issueDate?: true
     imageUrl?: true
+    walletAddress?: true
+    createdBy?: true
+    mintAddress?: true
+    txSignature?: true
     createdAt?: true
     updatedAt?: true
   }
@@ -949,6 +969,10 @@ export namespace Prisma {
     description?: true
     issueDate?: true
     imageUrl?: true
+    walletAddress?: true
+    createdBy?: true
+    mintAddress?: true
+    txSignature?: true
     createdAt?: true
     updatedAt?: true
     _all?: true
@@ -1034,6 +1058,10 @@ export namespace Prisma {
     description: string | null
     issueDate: Date
     imageUrl: string | null
+    walletAddress: string | null
+    createdBy: string | null
+    mintAddress: string | null
+    txSignature: string | null
     createdAt: Date
     updatedAt: Date
     _count: CertificateCountAggregateOutputType | null
@@ -1063,6 +1091,10 @@ export namespace Prisma {
     description?: boolean
     issueDate?: boolean
     imageUrl?: boolean
+    walletAddress?: boolean
+    createdBy?: boolean
+    mintAddress?: boolean
+    txSignature?: boolean
     createdAt?: boolean
     updatedAt?: boolean
   }, ExtArgs["result"]["certificate"]>
@@ -1075,6 +1107,10 @@ export namespace Prisma {
     description?: boolean
     issueDate?: boolean
     imageUrl?: boolean
+    walletAddress?: boolean
+    createdBy?: boolean
+    mintAddress?: boolean
+    txSignature?: boolean
     createdAt?: boolean
     updatedAt?: boolean
   }, ExtArgs["result"]["certificate"]>
@@ -1087,6 +1123,10 @@ export namespace Prisma {
     description?: boolean
     issueDate?: boolean
     imageUrl?: boolean
+    walletAddress?: boolean
+    createdBy?: boolean
+    mintAddress?: boolean
+    txSignature?: boolean
     createdAt?: boolean
     updatedAt?: boolean
   }, ExtArgs["result"]["certificate"]>
@@ -1099,11 +1139,15 @@ export namespace Prisma {
     description?: boolean
     issueDate?: boolean
     imageUrl?: boolean
+    walletAddress?: boolean
+    createdBy?: boolean
+    mintAddress?: boolean
+    txSignature?: boolean
     createdAt?: boolean
     updatedAt?: boolean
   }
 
-  export type CertificateOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "name" | "email" | "certTitle" | "description" | "issueDate" | "imageUrl" | "createdAt" | "updatedAt", ExtArgs["result"]["certificate"]>
+  export type CertificateOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "name" | "email" | "certTitle" | "description" | "issueDate" | "imageUrl" | "walletAddress" | "createdBy" | "mintAddress" | "txSignature" | "createdAt" | "updatedAt", ExtArgs["result"]["certificate"]>
 
   export type $CertificatePayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     name: "Certificate"
@@ -1116,6 +1160,10 @@ export namespace Prisma {
       description: string | null
       issueDate: Date
       imageUrl: string | null
+      walletAddress: string | null
+      createdBy: string | null
+      mintAddress: string | null
+      txSignature: string | null
       createdAt: Date
       updatedAt: Date
     }, ExtArgs["result"]["certificate"]>
@@ -1548,6 +1596,10 @@ export namespace Prisma {
     readonly description: FieldRef<"Certificate", 'String'>
     readonly issueDate: FieldRef<"Certificate", 'DateTime'>
     readonly imageUrl: FieldRef<"Certificate", 'String'>
+    readonly walletAddress: FieldRef<"Certificate", 'String'>
+    readonly createdBy: FieldRef<"Certificate", 'String'>
+    readonly mintAddress: FieldRef<"Certificate", 'String'>
+    readonly txSignature: FieldRef<"Certificate", 'String'>
     readonly createdAt: FieldRef<"Certificate", 'DateTime'>
     readonly updatedAt: FieldRef<"Certificate", 'DateTime'>
   }
@@ -1938,6 +1990,10 @@ export namespace Prisma {
     description: 'description',
     issueDate: 'issueDate',
     imageUrl: 'imageUrl',
+    walletAddress: 'walletAddress',
+    createdBy: 'createdBy',
+    mintAddress: 'mintAddress',
+    txSignature: 'txSignature',
     createdAt: 'createdAt',
     updatedAt: 'updatedAt'
   };
@@ -2030,6 +2086,10 @@ export namespace Prisma {
     description?: StringNullableFilter<"Certificate"> | string | null
     issueDate?: DateTimeFilter<"Certificate"> | Date | string
     imageUrl?: StringNullableFilter<"Certificate"> | string | null
+    walletAddress?: StringNullableFilter<"Certificate"> | string | null
+    createdBy?: StringNullableFilter<"Certificate"> | string | null
+    mintAddress?: StringNullableFilter<"Certificate"> | string | null
+    txSignature?: StringNullableFilter<"Certificate"> | string | null
     createdAt?: DateTimeFilter<"Certificate"> | Date | string
     updatedAt?: DateTimeFilter<"Certificate"> | Date | string
   }
@@ -2042,6 +2102,10 @@ export namespace Prisma {
     description?: SortOrderInput | SortOrder
     issueDate?: SortOrder
     imageUrl?: SortOrderInput | SortOrder
+    walletAddress?: SortOrderInput | SortOrder
+    createdBy?: SortOrderInput | SortOrder
+    mintAddress?: SortOrderInput | SortOrder
+    txSignature?: SortOrderInput | SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
   }
@@ -2057,6 +2121,10 @@ export namespace Prisma {
     description?: StringNullableFilter<"Certificate"> | string | null
     issueDate?: DateTimeFilter<"Certificate"> | Date | string
     imageUrl?: StringNullableFilter<"Certificate"> | string | null
+    walletAddress?: StringNullableFilter<"Certificate"> | string | null
+    createdBy?: StringNullableFilter<"Certificate"> | string | null
+    mintAddress?: StringNullableFilter<"Certificate"> | string | null
+    txSignature?: StringNullableFilter<"Certificate"> | string | null
     createdAt?: DateTimeFilter<"Certificate"> | Date | string
     updatedAt?: DateTimeFilter<"Certificate"> | Date | string
   }, "id">
@@ -2069,6 +2137,10 @@ export namespace Prisma {
     description?: SortOrderInput | SortOrder
     issueDate?: SortOrder
     imageUrl?: SortOrderInput | SortOrder
+    walletAddress?: SortOrderInput | SortOrder
+    createdBy?: SortOrderInput | SortOrder
+    mintAddress?: SortOrderInput | SortOrder
+    txSignature?: SortOrderInput | SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
     _count?: CertificateCountOrderByAggregateInput
@@ -2087,6 +2159,10 @@ export namespace Prisma {
     description?: StringNullableWithAggregatesFilter<"Certificate"> | string | null
     issueDate?: DateTimeWithAggregatesFilter<"Certificate"> | Date | string
     imageUrl?: StringNullableWithAggregatesFilter<"Certificate"> | string | null
+    walletAddress?: StringNullableWithAggregatesFilter<"Certificate"> | string | null
+    createdBy?: StringNullableWithAggregatesFilter<"Certificate"> | string | null
+    mintAddress?: StringNullableWithAggregatesFilter<"Certificate"> | string | null
+    txSignature?: StringNullableWithAggregatesFilter<"Certificate"> | string | null
     createdAt?: DateTimeWithAggregatesFilter<"Certificate"> | Date | string
     updatedAt?: DateTimeWithAggregatesFilter<"Certificate"> | Date | string
   }
@@ -2099,6 +2175,10 @@ export namespace Prisma {
     description?: string | null
     issueDate: Date | string
     imageUrl?: string | null
+    walletAddress?: string | null
+    createdBy?: string | null
+    mintAddress?: string | null
+    txSignature?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
   }
@@ -2111,6 +2191,10 @@ export namespace Prisma {
     description?: string | null
     issueDate: Date | string
     imageUrl?: string | null
+    walletAddress?: string | null
+    createdBy?: string | null
+    mintAddress?: string | null
+    txSignature?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
   }
@@ -2123,6 +2207,10 @@ export namespace Prisma {
     description?: NullableStringFieldUpdateOperationsInput | string | null
     issueDate?: DateTimeFieldUpdateOperationsInput | Date | string
     imageUrl?: NullableStringFieldUpdateOperationsInput | string | null
+    walletAddress?: NullableStringFieldUpdateOperationsInput | string | null
+    createdBy?: NullableStringFieldUpdateOperationsInput | string | null
+    mintAddress?: NullableStringFieldUpdateOperationsInput | string | null
+    txSignature?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -2135,6 +2223,10 @@ export namespace Prisma {
     description?: NullableStringFieldUpdateOperationsInput | string | null
     issueDate?: DateTimeFieldUpdateOperationsInput | Date | string
     imageUrl?: NullableStringFieldUpdateOperationsInput | string | null
+    walletAddress?: NullableStringFieldUpdateOperationsInput | string | null
+    createdBy?: NullableStringFieldUpdateOperationsInput | string | null
+    mintAddress?: NullableStringFieldUpdateOperationsInput | string | null
+    txSignature?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -2147,6 +2239,10 @@ export namespace Prisma {
     description?: string | null
     issueDate: Date | string
     imageUrl?: string | null
+    walletAddress?: string | null
+    createdBy?: string | null
+    mintAddress?: string | null
+    txSignature?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
   }
@@ -2159,6 +2255,10 @@ export namespace Prisma {
     description?: NullableStringFieldUpdateOperationsInput | string | null
     issueDate?: DateTimeFieldUpdateOperationsInput | Date | string
     imageUrl?: NullableStringFieldUpdateOperationsInput | string | null
+    walletAddress?: NullableStringFieldUpdateOperationsInput | string | null
+    createdBy?: NullableStringFieldUpdateOperationsInput | string | null
+    mintAddress?: NullableStringFieldUpdateOperationsInput | string | null
+    txSignature?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -2171,6 +2271,10 @@ export namespace Prisma {
     description?: NullableStringFieldUpdateOperationsInput | string | null
     issueDate?: DateTimeFieldUpdateOperationsInput | Date | string
     imageUrl?: NullableStringFieldUpdateOperationsInput | string | null
+    walletAddress?: NullableStringFieldUpdateOperationsInput | string | null
+    createdBy?: NullableStringFieldUpdateOperationsInput | string | null
+    mintAddress?: NullableStringFieldUpdateOperationsInput | string | null
+    txSignature?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -2229,6 +2333,10 @@ export namespace Prisma {
     description?: SortOrder
     issueDate?: SortOrder
     imageUrl?: SortOrder
+    walletAddress?: SortOrder
+    createdBy?: SortOrder
+    mintAddress?: SortOrder
+    txSignature?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
   }
@@ -2241,6 +2349,10 @@ export namespace Prisma {
     description?: SortOrder
     issueDate?: SortOrder
     imageUrl?: SortOrder
+    walletAddress?: SortOrder
+    createdBy?: SortOrder
+    mintAddress?: SortOrder
+    txSignature?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
   }
@@ -2253,6 +2365,10 @@ export namespace Prisma {
     description?: SortOrder
     issueDate?: SortOrder
     imageUrl?: SortOrder
+    walletAddress?: SortOrder
+    createdBy?: SortOrder
+    mintAddress?: SortOrder
+    txSignature?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
   }

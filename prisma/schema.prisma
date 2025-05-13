@@ -22,6 +22,10 @@ model Certificate {
   description   String?  // Certificate description
   issueDate     DateTime // Date when certificate was issued
   imageUrl      String?  // URL to the certificate image
+  walletAddress String?  // Recipient's wallet address
+  createdBy     String?  // Who created this certificate
+  mintAddress   String?  // NFT mint address if minted
+  txSignature   String?  // Transaction signature if minted
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 }
