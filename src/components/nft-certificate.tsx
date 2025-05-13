@@ -3,10 +3,10 @@
 import { useWallet } from "@solana/wallet-adapter-react";
 import { WalletMultiButton, WalletDisconnectButton } from "@solana/wallet-adapter-react-ui";
 import { useEffect, useState } from "react";
-import { PublicKey, Transaction, SystemProgram, LAMPORTS_PER_SOL, Connection } from "@solana/web3.js";
-import { Metaplex, keypairIdentity, walletAdapterIdentity } from "@metaplex-foundation/js";
+import { PublicKey, Connection } from "@solana/web3.js";
 import { SOLANA_RPC_URL, SOLANA_EXPLORER_URL, SOLANA_NETWORK, CONNECTION_CONFIG } from "@/lib/solana-config";
 import { waitForTransaction, getTransactionDetails } from "@/lib/solana-utils";
+import { mintNFTCertificate as mintNFTWithTokenProgram } from "@/lib/token-program";
 
 interface NFTCertificateProps {
   certificateId: string;
@@ -47,28 +47,15 @@ export default function NFTCertificate({
     setError("");
     
     try {
-      // Initialize Metaplex with wallet adapter identity
-      const metaplex = Metaplex.make(connection).use(walletAdapterIdentity(wallet));
-      
-      // Create the NFT with metadata
-      const { nft, response } = await metaplex
-        .nfts()
-        .create({
-          uri: imageUrl,
-          name: `Certificate: ${name}`,
-          sellerFeeBasisPoints: 0, // No royalties
-          symbol: "CERT",
-          creators: [
-            {
-              address: wallet.publicKey,
-              share: 100,
-            },
-          ],
-          isMutable: true,
-        });
-
-      // Get the transaction signature
-      const txSignature = response.signature;
+      // Use the Token Program to mint an NFT
+      const { mint, txId: txSignature } = await mintNFTWithTokenProgram(
+        connection,
+        wallet,
+        name,
+        "CERT", // symbol
+        description,
+        imageUrl
+      );
       
       // Wait for transaction confirmation using our reliable approach
       console.log('Waiting for transaction confirmation...');
@@ -78,20 +65,8 @@ export default function NFTCertificate({
       const txDetails = await getTransactionDetails(connection, txSignature);
       console.log('Transaction confirmed:', txDetails ? 'Success' : 'Details not available');
       
-      setNftMint(nft.address.toString());
+      setNftMint(mint);
       setTxId(txSignature);
-      
-      // Update the NFT with additional metadata
-      await metaplex.nfts().update({
-        nftOrSft: nft,
-        name: `Certificate: ${name}`,
-        symbol: "CERT",
-        uri: imageUrl,
-        sellerFeeBasisPoints: 0,
-      });
-
-      setNftMint(nft.address.toString());
-      setTxId(nft.address.toString()); // Use address instead of mintAddress
       
       // Save the NFT mint to your database
       try {
@@ -102,8 +77,8 @@ export default function NFTCertificate({
           },
           body: JSON.stringify({
             certificateId,
-            mintAddress: nft.address.toString(),
-            txSignature: txId, // Using the transaction ID as the signature
+            mintAddress: mint,
+            txSignature: txSignature,
           }),
         });
         

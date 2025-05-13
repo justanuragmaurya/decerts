@@ -4,10 +4,10 @@ import React, { useState } from 'react';
 import CertificatePreview from '@/components/certificate-preview';
 import { useWallet } from "@solana/wallet-adapter-react";
 import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
-import { Metaplex, walletAdapterIdentity } from "@metaplex-foundation/js";
-import { PublicKey, Connection, clusterApiUrl } from "@solana/web3.js";
+import { PublicKey, Connection } from "@solana/web3.js";
 import { SOLANA_RPC_URL, SOLANA_EXPLORER_URL, SOLANA_NETWORK, CONNECTION_CONFIG } from "@/lib/solana-config";
 import { waitForTransaction, getTransactionDetails } from "@/lib/solana-utils";
+import { mintNFTCertificate as mintNFTWithTokenProgram } from "@/lib/token-program";
 
 function IssuePage() {
   const [activeTab, setActiveTab] = useState('manual');
@@ -61,35 +61,17 @@ function IssuePage() {
     }
     
     try {
-      // Initialize Metaplex with wallet adapter identity
-      const metaplex = Metaplex.make(connection)
-        .use(walletAdapterIdentity(wallet));
-      
-      // Create the NFT with metadata and mint to recipient address
-      // This returns the transaction signature along with the NFT
-      const { nft, response } = await metaplex
-        .nfts()
-        .create({
-          uri: 'https://via.placeholder.com/500?text=Certificate',
-          name: `Certificate: ${formData.name}`,
-          sellerFeeBasisPoints: 0, // No royalties
-          symbol: "CERT",
-          creators: [
-            {
-              address: wallet.publicKey,
-              share: 100,
-            },
-          ],
-          isMutable: true,
-          tokenOwner: recipientAddress, // Mint directly to recipient
-        });
+      // Use the Token Program to mint an NFT
+      const { mint, txId } = await mintNFTWithTokenProgram(
+        connection,
+        wallet,
+        formData.name,
+        "CERT", // symbol
+        formData.description,
+        'https://via.placeholder.com/500?text=Certificate', // imageUrl
+        recipientAddress // optional recipient address
+      );
 
-      // Get the NFT mint address
-      const nftMint = nft.address.toString();
-      
-      // Get the transaction signature
-      const txId = response.signature;
-      
       // Wait for transaction confirmation using our reliable approach
       console.log('Waiting for transaction confirmation...');
       await waitForTransaction(connection, txId);
@@ -99,7 +81,7 @@ function IssuePage() {
       
       // Log success information
       console.log('NFT minted successfully:', {
-        mint: nftMint,
+        mint: mint,
         owner: recipientAddress.toString(),
         txId: txId,
         txDetails: txDetails ? 'Transaction confirmed' : 'Transaction details not available'
@@ -114,34 +96,27 @@ function IssuePage() {
           },
           body: JSON.stringify({
             certificateId,
-            mintAddress: nftMint,
-            txSignature: txId, // Using the transaction ID as the signature
+            mintAddress: mint,
+            txSignature: txId,
           }),
         });
         
         const result = await response.json();
         if (!response.ok) {
           console.error("Failed to update certificate in database", result);
-          // Still return success for the NFT minting part
-          return { 
-            success: true, 
-            nftMint, 
-            txId,
-            message: "NFT minted successfully, but failed to update database record" 
-          };
+          // Continue even if DB update fails
         }
       } catch (dbError) {
         console.error("Failed to update certificate in database", dbError);
-        // Continue even if DB update fails, return success for the NFT part
-        return { 
-          success: true, 
-          nftMint, 
-          txId,
-          message: "NFT minted successfully, but failed to update database record" 
-        };
+        // Continue even if DB update fails
       }
       
-      return { success: true, nftMint, txId };
+      return { 
+        success: true, 
+        message: "Certificate minted as NFT successfully!", 
+        nftMint: mint, 
+        txId 
+      };
     } catch (error) {
       console.error("Error minting NFT:", error);
       return { success: false, message: error instanceof Error ? error.message : "Failed to mint NFT certificate" };
